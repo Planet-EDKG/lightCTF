@@ -1,0 +1,20 @@
+[
+    {
+        "Name": "Challenge 1",
+        "Question": "Was ist 2 + 2?",
+        "Solution": "4",
+        "Points": 10
+    },
+    {
+        "Name": "Challenge 2",
+        "Question": "Was ist die Hauptstadt von Deutschland?",
+        "Solution": "Berlin",
+        "Points": 20
+    },
+    {
+        "Name": "test",
+        "Question": "test",
+        "Solution": "test",
+        "Points": 8976
+    }
+]

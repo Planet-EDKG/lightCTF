@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Play Game</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+                <div class="flash-message {{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
+    <nav>
+        <ul>
+            <li><a href="/user">🏠 Startseite</a></li>
+            <li><a href="/challenges">💯 Challenges</a></li>
+            <li><a href="/black_market">💲 Blackmarket</a></li>
+            <li><a href="/scoreboard">📊 Scoreboard</a></li>
+        </ul>
+    </nav>
+    <hr class="hr-line">
+    <div class="card-container">
+        <div class="sidebar">
+            <h3>Fragen Übersicht</h3>
+            <ul>
+                {% for challenge in challenges %}
+                    <li class="{% if challenge[0] in correct_answers %}correct{% elif challenge[0] in answered_questions %}answered{% endif %}">
+                        Frage {{ loop.index }}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>        
+
+        <div class="main-content">
+            <h1>Beantworte eine Frage</h1>
+            {% for challenge in challenges %}
+                <div class="challenge-card {% if challenge[0] in correct_answers %}disabled{% endif %}">
+                    <h3>{{ challenge[1] }}</h3>
+                    <p>{{ challenge[2] }}</p>
+                    <form method="POST">
+                        <input type="hidden" name="challenge_id" value="{{ challenge[0] }}">
+                        <input type="text" name="answer_{{ challenge[0] }}" placeholder="Deine Antwort" {% if challenge[0] in correct_answers %}disabled{% endif %}>
+                        <button type="submit" {% if challenge[0] in correct_answers %}disabled{% endif %}>Antworten</button>
+                    </form>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</body>
+</html>
