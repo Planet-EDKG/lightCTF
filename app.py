@@ -1,16 +1,18 @@
 import sqlite3
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file
+from werkzeug.utils import secure_filename
 import os
 import json
 
 app = Flask(__name__)
-app.secret_key = 'dein_geheimes_schlüssel'
+app.secret_key = 'your_secret_key'
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)  
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "json", "py", "txt"}
 
-# Datenbank initialisieren
+# Initialize database
 def init_db():
     conn = sqlite3.connect('users.db')
     c = conn.cursor()
@@ -38,7 +40,7 @@ def init_db():
             username TEXT,
             challenge_id INTEGER,
             FOREIGN KEY (username) REFERENCES users(username),
-            FOREIGN KEY (challenge_id) REFERENCES challenges(id)
+            FOREIGN KEY (challenge_id) REFERENCES questions(id)
         )
     ''')
     c.execute('''
@@ -47,8 +49,16 @@ def init_db():
             username TEXT,
             challenge_id INTEGER,
             FOREIGN KEY (username) REFERENCES users(username),
-            FOREIGN KEY (challenge_id) REFERENCES challenges(id)
+            FOREIGN KEY (challenge_id) REFERENCES questions(id)
         )
+    ''')
+    c.execute(
+        '''CREATE TABLE IF NOT EXISTS blackmarket (
+            id INTEGER PRIMARY KEY, 
+            name TEXT, 
+            costs INTEGER, 
+            image TEXT
+            )
     ''')
     conn.commit()
     conn.close()
@@ -56,30 +66,20 @@ def init_db():
 def refresh_database():
     conn = sqlite3.connect('users.db')
     c = conn.cursor()
-    c.execute('''
-        DELETE FROM users;
-    ''')
-    c.execute('''
-        DELETE FROM questions;
-    ''')
+    c.execute('DELETE FROM users;')
+    c.execute('DELETE FROM questions;')
     conn.commit()
     conn.close()
 
-# Benutzer zur Datenbank hinzufügen
+# Add user to database
 def add_user(username, password, role):
     conn = sqlite3.connect('users.db')
     c = conn.cursor()
-
-    # Benutzer in die Datenbank einfügen (Passwort im Klartext)
-    c.execute('''
-        INSERT INTO users (username, password, role) 
-        VALUES (?, ?, ?)
-    ''', (username, password, role))
-    
+    c.execute('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', (username, password, role))
     conn.commit()
     conn.close()
 
-# Funktion, um Challenges aus der DB zu holen
+# Fetch all challenges from DB
 def get_all_challenges():
     conn = sqlite3.connect('users.db')
     c = conn.cursor()
@@ -88,7 +88,7 @@ def get_all_challenges():
     conn.close()
     return challenges
 
-# Funktion, um Challenges zu speichern (Für Import)
+# Save challenge to database (for import)
 def save_challenge(name, question, solution, points):
     conn = sqlite3.connect('users.db')
     c = conn.cursor()
@@ -105,32 +105,32 @@ def get_entire_points():
     conn.close()
     return points
 
-# Anmeldung
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# Login
 @app.route('/', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
         
-        # Überprüfen, ob der Benutzer existiert und das Passwort korrekt ist
         conn = sqlite3.connect('users.db')
         c = conn.cursor()
         c.execute('SELECT * FROM users WHERE username = ?', (username,))
         user = c.fetchone()
         conn.close()
 
-        if user and user[2] == password:  # user[2] ist das Passwort (Klartext)
-            # Benutzerrolle in der Session speichern
+        if user and user[2] == password:
             session['username'] = user[1]
             session['role'] = user[3]
 
-            # Nach erfolgreichem Login auf das Dashboard weiterleiten
             if user[3] == 'Admin':
                 return redirect(url_for('admin_dashboard'))
             elif user[3] == 'Player':
                 return redirect(url_for('user_dashboard'))
         else:
-            return 'Ungültige Anmeldedaten', 401
+            return 'Invalid login credentials', 401
 
     return render_template('login.html')
 
@@ -141,7 +141,7 @@ def admin_dashboard():
         return render_template('admin.html')  
     return redirect(url_for('login'))
 
-# Benutzer Dashboard
+# User Dashboard
 @app.route('/user')
 def user_dashboard():
     if 'role' in session and session['role'] == 'Player':
@@ -152,49 +152,39 @@ def user_dashboard():
 def play_game():
     conn = sqlite3.connect('users.db')
     c = conn.cursor()
-
-    # Alle Challenges abrufen
     c.execute('SELECT id, name, question, solution, points FROM questions')
     challenges = c.fetchall()
 
-    # Beantwortete und korrekt beantwortete Fragen abrufen
     answered_questions = []
     correct_answers = []
     
     if 'username' in session:
         username = session['username']
-
-        # Welche Fragen hat der User beantwortet?
         c.execute('SELECT challenge_id FROM answered_questions WHERE username = ?', (username,))
         answered_questions = [row[0] for row in c.fetchall()]
 
-        # Welche Fragen hat der User bereits korrekt beantwortet?
         c.execute('SELECT challenge_id FROM correct_answers WHERE username = ?', (username,))
         correct_answers = [row[0] for row in c.fetchall()]
 
     if request.method == 'POST':
         challenge_id = int(request.form['challenge_id'])
         user_answer = request.form.get(f'answer_{challenge_id}', '').strip()
-
-        # Richtige Lösung abrufen
         c.execute('SELECT solution, points FROM questions WHERE id = ?', (challenge_id,))
         challenge = c.fetchone()
 
         if challenge:
             correct_solution, points = challenge
 
-            # Falls die Frage bereits korrekt beantwortet wurde, blockieren
             if challenge_id in correct_answers:
-                flash('Diese Frage hast du bereits richtig beantwortet!', 'info')
+                flash('You have already answered this question correctly!', 'info')
             else:
-                if user_answer.lower() == correct_solution.lower():  # Antwort vergleichen
+                if user_answer.lower() == correct_solution.lower():
                     c.execute('UPDATE users SET score = score + ? WHERE username = ?', (points, username))
                     c.execute('INSERT INTO correct_answers (username, challenge_id) VALUES (?, ?)', (username, challenge_id))
-                    flash(f'Richtige Antwort! {points} Punkte erhalten.', 'success')
+                    flash(f'Correct answer! You earned {points} points.', 'success')
                 else:
-                    flash('Falsche Antwort! Versuch es erneut.', 'danger')
+                    flash('Wrong answer! Try again.', 'danger')
 
-                # Speichert, dass der User diese Frage beantwortet hat
                 if challenge_id not in answered_questions:
                     c.execute('INSERT INTO answered_questions (username, challenge_id) VALUES (?, ?)', (username, challenge_id))
 
@@ -211,26 +201,26 @@ def logout():
     session.pop('role', None)
     return redirect(url_for('login'))
 
+# Register
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
         role = request.form['role']
-        
         add_user(username, password, role)
-        flash('Benutzer wurde erfolgreich registriert!', 'success')  
+        flash('User successfully registered!', 'success')  
         return redirect(url_for('register')) 
 
     return render_template('register.html')
 
-# Funktion zum Export der Challenges als JSON
+# Function to export challenges as JSON
 @app.route('/export_challenges', methods=['GET'])
 def export_challenges():
     challenges = get_all_challenges()  
     challenges_list = []
     
-    # Umwandeln der Challenges in eine JSON-kompatible Liste
+    # Convert challenges into a JSON-compatible list
     for challenge in challenges:
         challenges_list.append({
             "Name": challenge[0],
@@ -238,7 +228,7 @@ def export_challenges():
             "Solution": challenge[2],
             "Points": challenge[3]
         })
-    # Erstelle eine JSON-Datei und speichere sie
+    # Create a JSON file and save it
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], 'challenges_export.json')
     with open(file_path, 'w', encoding='utf-8') as f:
         json.dump(challenges_list, f, ensure_ascii=False, indent=4)
@@ -248,7 +238,7 @@ def export_challenges():
 @app.route('/add_challenge', methods=['GET', 'POST'])
 def add_challenge():
     if request.method == 'POST':
-        if 'file' in request.files:  # Prüfen ob Datei hochgeladen wurde
+        if 'file' in request.files:  # Check if a file was uploaded
             file = request.files['file']
             if file.filename.endswith('.json'):
                 file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
@@ -262,19 +252,19 @@ def add_challenge():
                             challenge["Solution"], 
                             challenge["Points"]
                         )
-                flash('JSON-Datei erfolgreich importiert!', 'success')
+                flash('JSON file successfully imported!', 'success')
                 return redirect(url_for('add_challenge'))
             else:
-                flash('Bitte eine gültige JSON-Datei hochladen!', 'danger')
+                flash('Please upload a valid JSON file!', 'danger')
 
         else:
-            # Manuelle Eingabe speichern
+            # Save manual input
             name = request.form['Name']
             question = request.form['Question']
             solution = request.form['Solution']
             points = request.form['Points']
             save_challenge(name, question, solution, points)
-            flash('Frage wurde erfolgreich hinzugefügt!', 'success')  
+            flash('Question successfully added!', 'success')  
             return redirect(url_for('add_challenge')) 
 
     return render_template('add_challenge.html')
@@ -303,9 +293,33 @@ def scoreboard():
     if user:
         role = user[0]  
         if role == 'Admin':
-            return redirect(url_for('scoreboard_admin.html', users=users, points=points))
+            return render_template('scoreboard_admin.html', users=users, points=points)
         elif role == 'Player':
-            return redirect(url_for('scoreboard_user.html', users=users, points=points))
+            return render_template('scoreboard_user.html', users=users, points=points)
+
+@app.route("/add_blackmarket", methods=["GET", "POST"])
+def add_blackmarket():
+    if request.method == "POST":
+        name = request.form["Name"]
+        costs = request.form["Costs"]
+        file = request.files["file"]
+
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+            file.save(filepath)
+
+            conn = sqlite3.connect("users.db")
+            c = conn.cursor()
+            c.execute("INSERT INTO blackmarket (name, costs, image) VALUES (?, ?, ?)", (name, costs, filename))
+            conn.commit()
+            conn.close()
+
+            flash("Item successfully added!", "success")
+            return redirect(url_for("add_blackmarket"))
+
+    return render_template("add_blackmarket.html")
+
 
 if __name__ == '__main__':
     init_db()

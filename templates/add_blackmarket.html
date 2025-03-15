@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Black Market</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+                <div class="flash-message {{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
+
+    <nav>
+        <ul>
+            <li><a href="/admin">🏠 Startseite</a></li>
+            <li><a href="/register">📝 Register User</a></li>
+            <li><a href="/add_challenge">⚡ Add Challenge</a></li>
+            <li><a href="/add_blackmarket">💲 Add Blackmarket</a></li>
+            <li><a href="/scoreboard">📊 Scoreboard</a></li>
+        </ul>
+    </nav>
+
+    <hr class="hr-line">
+
+    <h1>Add Material to Blackmarket</h1>
+    <div class="form-container">
+        <form method="POST" enctype="multipart/form-data">
+            <input type="text" name="Name" placeholder="Name" required><br>
+            <input type="number" name="Costs" placeholder="Costs" required><br>
+            <input type="file" name="file" required><br>
+            <button type="submit">Add</button>
+        </form>
+    </div>
+
+    <div class="footer">
+        <p>All rights reserved © Copyright 2025</p>
+    </div>
+
+</body>
+</html>
