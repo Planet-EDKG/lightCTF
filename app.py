@@ -7,14 +7,13 @@ app = Flask(__name__)
 app.secret_key = 'dein_geheimes_schlüssel'
 
 UPLOAD_FOLDER = "uploads"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # Erstelle den Upload-Ordner falls nicht vorhanden
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)  
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Datenbank initialisieren
 def init_db():
     conn = sqlite3.connect('users.db')
     c = conn.cursor()
-    # Tabelle erstellen, falls sie noch nicht existiert
     c.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -97,6 +96,14 @@ def save_challenge(name, question, solution, points):
               (name, question, solution, points))
     conn.commit()
     conn.close()
+    
+def get_entire_points():
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute('SELECT SUM(points) FROM questions')
+    points = c.fetchone()[0]
+    conn.close()
+    return points
 
 # Anmeldung
 @app.route('/', methods=['GET', 'POST'])
@@ -272,6 +279,33 @@ def add_challenge():
 
     return render_template('add_challenge.html')
 
+@app.route('/scoreboard', methods=['GET'])
+def scoreboard():
+    points = get_entire_points()
+
+    if 'username' not in session:
+        return redirect(url_for('login')) 
+
+    username = session['username']
+
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+
+    c.execute('SELECT username, score FROM users ORDER BY score DESC')
+    users = c.fetchall()
+
+    c.execute('SELECT role FROM users WHERE username = ?', (username,))
+    user = c.fetchone()
+    conn.close()
+
+    users = [user for user in users if user[0].lower() != "admin"]
+
+    if user:
+        role = user[0]  
+        if role == 'Admin':
+            return redirect(url_for('scoreboard_admin.html', users=users, points=points))
+        elif role == 'Player':
+            return redirect(url_for('scoreboard_user.html', users=users, points=points))
 
 if __name__ == '__main__':
     init_db()

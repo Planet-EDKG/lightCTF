@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scoreboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="/user">🏠 Startseite</a></li>
+            <li><a href="/challenges">💯 Challenges</a></li>
+            <li><a href="/black_market">💲 Blackmarket</a></li>
+            <li><a href="/scoreboard">📊 Scoreboard</a></li>
+        </ul>
+    </nav>
+    <hr class="hr-line"> 
+
+    {% for user in users %}
+        <div class="scoreboard-card">
+            <h3>{{ user[0] }}</h3>
+            <p>Punkte: {{ user[1] }} / {{ points }}</p>
+
+            <div class="progress-bar">
+                <div class="progress" style="width: {{ (user[1] / points) * 100 }}%;"></div>
+            </div>
+        </div>
+    {% endfor %}
+</body>
+</html>
