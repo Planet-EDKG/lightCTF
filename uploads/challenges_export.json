@@ -10,11 +10,5 @@
         "Question": "Was ist die Hauptstadt von Deutschland?",
         "Solution": "Berlin",
         "Points": 20
-    },
-    {
-        "Name": "test",
-        "Question": "test",
-        "Solution": "test",
-        "Points": 8976
     }
 ]
