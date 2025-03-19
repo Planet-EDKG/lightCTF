@@ -1,14 +1,62 @@
 [
     {
         "Name": "Challenge 1",
-        "Question": "Was ist 2 + 2?",
-        "Solution": "4",
+        "Question": "Ich bin größer als das Universum, aber nichts kann mich sehen. Wer bin ich?",
+        "Solution": "Nichts",
         "Points": 10
     },
     {
         "Name": "Challenge 2",
-        "Question": "Was ist die Hauptstadt von Deutschland?",
-        "Solution": "Berlin",
+        "Question": "Welches bekannte mathematische Problem, das mit Primzahlen zu tun hat, wurde noch nie bewiesen oder widerlegt?",
+        "Solution": "Goldbachsche Vermutung",
+        "Points": 20
+    },
+    {
+        "Name": "Challenge 3",
+        "Question": "Welcher antike Philosoph wurde gezwungen, den Schierlingsbecher zu trinken?",
+        "Solution": "Sokrates",
+        "Points": 15
+    },
+    {
+        "Name": "Challenge 4",
+        "Question": "Welches chemische Element hat das Symbol 'W', obwohl es einen ganz anderen Namen hat?",
+        "Solution": "Wolfram",
+        "Points": 15
+    },
+    {
+        "Name": "Challenge 5",
+        "Question": "Welcher Code wurde im Zweiten Weltkrieg von Alan Turing und seinem Team entschlüsselt?",
+        "Solution": "Enigma",
+        "Points": 20
+    },
+    {
+        "Name": "Challenge 6",
+        "Question": "Welcher Planet unseres Sonnensystems rotiert im Uhrzeigersinn, im Gegensatz zu den meisten anderen?",
+        "Solution": "Venus",
+        "Points": 15
+    },
+    {
+        "Name": "Challenge 7",
+        "Question": "Welches Land hat die meisten offiziellen Sprachen, mit insgesamt 11?",
+        "Solution": "Südafrika",
+        "Points": 15
+    },
+    {
+        "Name": "Challenge 8",
+        "Question": "Welcher Filmregisseur ist für die sogenannten 'Mind-Bender'-Filme bekannt, darunter 'Inception' und 'Interstellar'?",
+        "Solution": "Christopher Nolan",
+        "Points": 10
+    },
+    {
+        "Name": "Challenge 9",
+        "Question": "Welches berühmte unvollendete mathematische Werk wurde von Pierre de Fermat mit den Worten 'Ich habe einen wahrhaft wunderbaren Beweis dafür, doch dieser Rand ist zu schmal' kommentiert?",
+        "Solution": "Fermats letzter Satz",
+        "Points": 25
+    },
+    {
+        "Name": "Challenge 10",
+        "Question": "Welches Tier kann am längsten ohne Wasser überleben – länger als ein Kamel?",
+        "Solution": "Kängururatte",
         "Points": 20
     }
 ]
