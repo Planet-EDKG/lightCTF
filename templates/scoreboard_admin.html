@@ -14,6 +14,7 @@
             <li><a href="/add_challenge">⚡ Add Challenge</a></li>
             <li><a href="/add_blackmarket">💲 Add Blackmarket</a></li>
             <li><a href="/scoreboard">📊 Scoreboard</a></li>
+            <li><a href="/logout">🚪 Logout</a></li>
         </ul>
     </nav>
     <hr class="hr-line"> 
@@ -21,7 +22,7 @@
     {% for user in users %}
         <div class="scoreboard-card">
             <h3>{{ user[0] }}</h3>
-            <p>Punkte: {{ user[1] }} / {{ points }}</p>
+            <p>Points: {{ user[1] }} / {{ points }}</p>
             <div class="progress-container">
                 <div class="progress-bar">
                     <div class="progress" style="width: {{ (user[1] / points) * 100 }}%;"></div>

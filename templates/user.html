@@ -67,6 +67,70 @@
             border-radius: 5px; 
         }
         
+        .info-section {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: rgba(110, 87, 224, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: left;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .feature-card h3 {
+            color: #ff62b2;
+            margin-bottom: 15px;
+        }
+
+        .feature-card ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .feature-card ul li {
+            margin: 10px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .feature-card ul li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #6e57e0;
+        }
+
+        .tips-section {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: rgba(255, 98, 178, 0.1);
+            border-radius: 15px;
+        }
+
+        .tips-section ul {
+            list-style-type: none;        
+        }
+
+        small {
+            display: block;
+            margin-top: 15px;
+            color: #ff62b2;
+        }
+
     </style>
 </head>
 <body>
@@ -76,13 +140,58 @@
             <li><a href="/challenges">💯 Challenges</a></li>
             <li><a href="/black_market">💲 Blackmarket</a></li>
             <li><a href="/scoreboard">📊 Scoreboard</a></li>
+            <li><a href="/logout">🚪 Logout</a></li>
         </ul>
     </nav>
     <hr class="hr-line">
-    <h1>Willkommen, Benutzer!</h1>
-    <div class="content">
-        <p>Dies ist das Benutzer Dashboard.</p>
-        <a href="/logout" class="logout">Abmelden</a>
-    </div>
+        <h1>Welcome to LightCTF!</h1>
+        <div class="content">
+            <div class="info-section">
+                <h2>🎯 How It Works</h2>
+                <p>LightCTF is a Capture-The-Flag platform where you can earn points by solving various challenges.</p>
+            </div>
+    
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>💯 Challenges</h3>
+                    <p>Solve different tasks and collect points:</p>
+                    <ul>
+                        <li>Select a challenge</li>
+                        <li>Find the correct solution (flag)</li>
+                        <li>Earn points for correct answers</li>
+                    </ul>
+                </div>
+    
+                <div class="feature-card">
+                    <h3>💲 Blackmarket</h3>
+                    <p>Use your earned points for:</p>
+                    <ul>
+                        <li>Exclusive hints</li>
+                        <li>Additional resources</li>
+                        <li>Special items</li>
+                    </ul>
+                    <small>Note: Spending points in the blackmarket won't affect your scoreboard position!</small>
+                </div>
+    
+                <div class="feature-card">
+                    <h3>📊 Scoreboard</h3>
+                    <p>Track your progress:</p>
+                    <ul>
+                        <li>View your total score</li>
+                        <li>Compare with others</li>
+                        <li>Climb the rankings</li>
+                    </ul>
+                </div>
+            </div>
+    
+            <div class="tips-section">
+                <h3>💡 Getting Started Tips</h3>
+                <ul>
+                    <li>Start with easier challenges</li>
+                    <li>Use blackmarket hints strategically</li>
+                    <li>Document your solutions</li>
+                </ul>
+            </div>
+        </div>    
 </body>
 </html>
