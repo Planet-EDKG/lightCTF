@@ -3,7 +3,7 @@ from werkzeug.utils import secure_filename
 import os
 import json
 import sqlite3
-from database import add_user, get_all_challenges, save_challenge, get_entire_points
+from database import add_user, get_all_challenges, save_challenge, get_entire_points, buy_blackmarket_item, update_user_points
 from helpers import allowed_file
 
 def configure_routes(app):
@@ -94,7 +94,7 @@ def configure_routes(app):
                     flash('You have already answered this question correctly!', 'info')
                 else:
                     if user_answer.lower() == correct_solution.lower():
-                        c.execute('UPDATE users SET score = score + ? WHERE username = ?', (points, username))
+                        update_user_points(username, points)
                         c.execute('INSERT INTO correct_answers (username, challenge_id) VALUES (?, ?)', (username, challenge_id))
                         flash(f'Correct answer! You earned {points} points.', 'success')
                     else:
@@ -197,3 +197,48 @@ def configure_routes(app):
                 return redirect(url_for("add_blackmarket"))
 
         return render_template("add_blackmarket.html")
+
+    @app.route('/black_market', methods=['GET'])
+    def blackmarket():
+        if 'username' not in session:
+            return redirect(url_for('login'))
+        
+        conn = sqlite3.connect('users.db')
+        c = conn.cursor()
+        c.execute('SELECT id, name, costs, image FROM blackmarket')
+        items = [{'id': row[0], 'name': row[1], 'costs': row[2], 'image': row[3]} for row in c.fetchall()]
+        conn.close()
+        
+        return render_template('blackmarket.html', items=items)
+
+    @app.route('/buy_blackmarket', methods=['POST'])
+    def buy_blackmarket():
+        if 'username' not in session:
+            return redirect(url_for('login'))
+        
+        username = session['username']
+        item_id = request.form['item_id']
+        
+        conn = sqlite3.connect('users.db')
+        c = conn.cursor()
+        c.execute('SELECT item_id FROM purchased_items WHERE username = ? AND item_id = ?', (username, item_id))
+        already_purchased = c.fetchone()
+        
+        if already_purchased:
+            flash("You have already purchased this item!", 'danger')
+            return redirect(url_for('blackmarket'))
+        
+        result = buy_blackmarket_item(username, item_id)
+        if result.startswith("Download available"):
+            filename = result.split(": ")[1]
+            
+            # Kauf in der Datenbank speichern
+            c.execute('INSERT INTO purchased_items (username, item_id) VALUES (?, ?)', (username, item_id))
+            conn.commit()
+            conn.close()
+            
+            return send_file(os.path.join(app.config['UPLOAD_FOLDER'], filename), as_attachment=True)
+        else:
+            flash(result, 'danger')
+            conn.close()
+            return redirect(url_for('blackmarket'))

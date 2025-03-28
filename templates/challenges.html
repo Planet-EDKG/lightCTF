@@ -12,7 +12,10 @@
     {% if messages %}
         <div class="flash-messages">
             {% for category, message in messages %}
-                <div class="flash-message {{ category }}">{{ message }}</div>
+                <div class="flash-message {{ category }}">
+                    <span>{{ message }}</span>
+                    <button class="close-btn" onclick="this.parentElement.style.display='none'">✖</button>
+                </div>
             {% endfor %}
         </div>
     {% endif %}
@@ -23,6 +26,7 @@
             <li><a href="/challenges">💯 Challenges</a></li>
             <li><a href="/black_market">💲 Blackmarket</a></li>
             <li><a href="/scoreboard">📊 Scoreboard</a></li>
+            <li><a href="/logout">🚪 Logout</a></li>
         </ul>
     </nav>
     <hr class="hr-line">

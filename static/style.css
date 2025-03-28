@@ -323,3 +323,11 @@ button:hover {
     background: linear-gradient(135deg, #6e57e0, #ff62b2);
     transition: width 0.5s ease-in-out;
 }
+
+.flash-message .close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+}

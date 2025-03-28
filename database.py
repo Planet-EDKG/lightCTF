@@ -9,7 +9,8 @@ def init_db():
             username TEXT NOT NULL UNIQUE,
             password TEXT NOT NULL,
             role TEXT NOT NULL,
-            score INT DEFAULT 0
+            score INT DEFAULT 0,
+            blackmarket_points INT DEFAULT 0
         )
     ''')
     c.execute('''
@@ -45,6 +46,15 @@ def init_db():
             name TEXT, 
             costs INTEGER, 
             image TEXT
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS purchased_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL,
+            item_id INTEGER NOT NULL,
+            FOREIGN KEY (username) REFERENCES users(username),
+            FOREIGN KEY (item_id) REFERENCES blackmarket(id)
         )
     ''')
     conn.commit()
@@ -87,3 +97,32 @@ def refresh_database():
     c.execute('DELETE FROM questions;')
     conn.commit()
     conn.close()
+    
+def update_user_points(username, points):
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute('UPDATE users SET score = score + ?, blackmarket_points = blackmarket_points + ? WHERE username = ?', (points, points, username))
+    conn.commit()
+    conn.close()
+
+def buy_blackmarket_item(username, item_id):
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute('SELECT costs, image FROM blackmarket WHERE id = ?', (item_id,))
+    item = c.fetchone()
+    
+    if not item:
+        return "Item not found"
+    
+    cost, image = item
+    c.execute('SELECT blackmarket_points FROM users WHERE username = ?', (username,))
+    user_points = c.fetchone()[0]
+    
+    if user_points < cost:
+        return "Not enough points"
+    
+    c.execute('UPDATE users SET blackmarket_points = blackmarket_points - ? WHERE username = ?', (cost, username))
+    conn.commit()
+    conn.close()
+    
+    return f"Download available: {image}"
