@@ -36,7 +36,13 @@ def configure_routes(app):
     @app.route('/admin')
     def admin_dashboard():
         if 'role' in session and session['role'] == 'Admin':
-            return render_template('admin.html')  
+            
+            conn = sqlite3.connect('users.db')
+            c = conn.cursor()
+            c.execute('SELECT id, username FROM users WHERE role = "Player"')  
+            players = c.fetchall() 
+            
+            return render_template('admin.html', players=players)  
         return redirect(url_for('login'))
 
     @app.route('/user')
@@ -143,10 +149,31 @@ def configure_routes(app):
                 points = request.form['Points']
                 save_challenge(name, question, solution, points)
                 flash('Question successfully added!', 'success')  
-                return redirect(url_for('add_challenge')) 
+                return redirect(url_for('add_challenge'))
+            
+        conn = sqlite3.connect('users.db')
+        c = conn.cursor()
+        c.execute('SELECT id, name FROM questions')  
+        challenges = c.fetchall() 
+        return render_template('add_challenge.html', challenges=challenges)
+    
+    @app.route('/delete_challenge', methods=['POST'])
+    def delete_challenge():
+        if 'role' in session and session['role'] == 'Admin':
+            challenge_id = request.form.get('challenge_id')
 
-        return render_template('add_challenge.html')
+            if challenge_id:
+                conn = sqlite3.connect('users.db')
+                c = conn.cursor()
+                c.execute('DELETE FROM questions WHERE id = ?', (challenge_id,))
+                conn.commit()
+                conn.close()
+                flash('Deleted Challenge!', 'success')
+            else:
+                flash('Please choose a Challenge', 'error')
 
+        return redirect(url_for('add_challenge'))  
+    
     @app.route('/scoreboard', methods=['GET'])
     def scoreboard():
         points = get_entire_points()
@@ -232,7 +259,6 @@ def configure_routes(app):
         if result.startswith("Download available"):
             filename = result.split(": ")[1]
             
-            # Kauf in der Datenbank speichern
             c.execute('INSERT INTO purchased_items (username, item_id) VALUES (?, ?)', (username, item_id))
             conn.commit()
             conn.close()
@@ -242,3 +268,52 @@ def configure_routes(app):
             flash(result, 'danger')
             conn.close()
             return redirect(url_for('blackmarket'))
+        
+    @app.route('/reset_game', methods=['POST'])
+    def reset_game():
+        if 'role' in session and session['role'] == 'Admin':
+            conn = sqlite3.connect('users.db')
+            c = conn.cursor()
+
+            c.execute('DELETE FROM answered_questions')
+            c.execute('DELETE FROM correct_answers')
+            c.execute('DELETE FROM purchased_items')
+            c.execute('UPDATE users SET score = 0')
+            c.execute('UPDATE users SET blackmarket_points = 0')
+
+            conn.commit()
+            conn.close()
+
+            flash('Game reset successfully!', 'success')
+        return redirect(url_for('admin_dashboard'))
+    
+    @app.route('/reset_players', methods=['POST'])
+    def reset_player():
+        if 'role' in session and session['role'] == 'Admin':
+            username = request.form.get('username')
+            conn = sqlite3.connect('users.db')
+            c = conn.cursor()
+            c.execute('UPDATE users SET score = 0 WHERE role = ?', ('Player',))
+            c.execute('UPDATE users SET blackmarket_points = 0 WHERE role = ?', ('Player',))
+            conn.commit()
+            conn.close()
+
+            flash(f'Reset Players successfully!', 'success')
+        return redirect(url_for('admin_dashboard'))
+    
+    @app.route('/add_points', methods=['POST'])
+    def add_points():
+        if 'role' in session and session['role'] == 'Admin':
+            id = request.form.get('username')
+            points = request.form.get('points')
+
+            conn = sqlite3.connect('users.db')
+            c = conn.cursor()
+            c.execute('UPDATE users SET blackmarket_points = blackmarket_points + ? WHERE id = ?', (points, id))
+            c.execute('SELECT username FROM users WHERE id = ?', (id,))
+            username = c.fetchone()[0]
+            conn.commit()
+            conn.close()
+
+            flash(f'Added {points} points to {username} successfully!', 'success')
+        return redirect(url_for('admin_dashboard'))

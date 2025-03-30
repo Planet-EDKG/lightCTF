@@ -11,25 +11,25 @@
     .json-container {
         display: flex;
         justify-content: center;
-        gap: 200px; /* Abstand zwischen den Elementen */
+        gap: 200px;
         align-items: center;
         margin-top: 20px;
     }
-    
+
     .json-container .form-container {
-        background: rgba(255, 255, 255, 0.1); /* Leicht transparent */
+        background: rgba(255, 255, 255, 0.1);
         padding: 20px;
         border-radius: 10px;
         text-align: center;
         box-shadow: 0px 4px 10px rgba(255, 98, 178, 0.3);
     }
-    
+
     .json-container h2 {
         text-align: center;
         margin-bottom: 10px;
         color: white;
     }
-    
+
     .json-container button {
         background: linear-gradient(135deg, #6e57e0, #ff62b2);
         color: white;
@@ -40,12 +40,88 @@
         border: none;
         transition: all 0.3s ease;
     }
-    
+
     .json-container button:hover {
         transform: scale(1.05);
         box-shadow: 0px 4px 10px rgba(255, 98, 178, 0.5);
     }
-    
+
+    .delete-form {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+    }
+
+    .delete-form input {
+        padding: 10px;
+        margin-right: 10px;
+        border-radius: 5px;
+        border: none;
+        font-size: 16px;
+    }
+
+    .delete-form button {
+        background: red;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        border: none;
+        transition: all 0.3s ease;
+    }
+
+    .delete-form button:hover {
+        transform: scale(1.05);
+        box-shadow: 0px 4px 10px rgba(255, 0, 0, 0.5);
+    }
+    .select-container {
+        width: 90%;
+        max-width: 400px;
+        margin: 20px auto;
+        position: relative;
+    }
+
+    .select-container select {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 30px;
+        border: 2px solid #6e57e0;
+        border-radius: 8px;
+        font-size: 16px;
+        background-color: #2d354a;
+        color: white;
+        appearance: none; /* Entfernt Standard-Pfeil */
+        cursor: pointer;
+        outline: none;
+        transition: all 0.3s ease;
+    }
+
+    .select-container::after {
+        content: "▼";
+        position: absolute;
+        top: 48%;
+        right: 15px;
+        transform: translateY(-50%);
+        color: white;
+        font-size: 16px;
+        pointer-events: none;
+    }
+
+    .select-container select:hover,
+    .select-container select:focus {
+        border-color: #ff62b2;
+        background-color: #3a435a;
+        box-shadow: 0 0 10px rgba(255, 98, 178, 0.5);
+    }
+
+    .select-container select option {
+        background-color: #2d354a;
+        color: white;
+        font-size: 16px;
+        padding: 10px;
+    }
+
 </style>
 <body>
 
@@ -63,7 +139,6 @@
     {% endif %}
     {% endwith %}
 
-    <!-- Navigation -->
     <nav>
         <ul>
             <li><a href="/admin">🏠 Startseite</a></li>
@@ -86,7 +161,7 @@
             <input type="text" name="Question" placeholder="Question" required><br>
             <input type="text" name="Solution" placeholder="Solution" required><br>
             <input type="number" name="Points" placeholder="Points" required><br>
-            <button type="submit">Hinzufügen</button>
+            <button type="submit">Add</button>
         </form>
     </div>
 
@@ -98,21 +173,36 @@
             <div class="form-container">
                 <form method="POST" enctype="multipart/form-data">
                     <input type="file" name="file" accept=".json" required><br>
-                    <button type="submit">Importieren</button>
+                    <button type="submit">Import</button>
                 </form>
             </div>
         </div>
-    
+
         <div class="export-section">
             <h2>Export JSON</h2>
             <div class="form-container">
                 <a href="{{ url_for('export_challenges') }}">
-                    <button type="button">Exportieren</button>
+                    <button type="button">Export</button>
                 </a>
             </div>
         </div>
     </div>
-    
+
+    <hr class="hr-line">
+
+
+    <div class="select-container">
+        <h2>Delete a Challenge</h2>
+        <form method="POST" action="{{ url_for('delete_challenge') }}">
+            <select name="challenge_id" required>
+                <option value="" disabled selected>Choose a Challenge</option>
+                {% for challenge in challenges %}
+                    <option value="{{ challenge[0] }}">{{ challenge[1] }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit">Delete</button>
+        </form>
+    </div>    
 
     <div class="footer">
         <p>All rights reserved © Copyright 2025</p>

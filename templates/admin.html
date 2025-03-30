@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
+        /* Grundlegendes Styling */
         body {
             font-family: 'Poppins', sans-serif;
             background-color: #1e2235;
@@ -14,62 +16,133 @@
             margin: 0;
             padding: 0;
         }
+
         h1 {
-            margin-top: 50px;
+            margin-top: 30px;
+            font-size: 2.5rem;
         }
+
         .content {
             margin-top: 20px;
         }
-        a{
-            text-decoration: none;
-        }
-        .custom-button {
-            background: linear-gradient(135deg, #6e57e0, #ff62b2);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.3s ease, transform 0.2s ease;
-        }
-        .logout:hover {
-            transform: scale(1.05);
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(255, 98, 178, 0.3);
+            margin: 20px auto;
+            max-width: 500px;
+            text-align: left;
         }
 
-        nav {
-            margin-top: 20px;
-            display: flex;
-            justify-content: center;
-        }
-        nav ul {
-            list-style-type: none;
-            padding: 0;
-            margin: 0;
-            display: flex;
-        }
-        nav ul li {
-            size: 10px;
-            padding: 10px;
-            margin: 0 10px;
-        }
-        nav ul li a {
-            text-decoration: none;
+        .card h2 {
             color: white;
-            font-size: 18px;
         }
-        .hr-line {
-            width: 90%; 
-            height: 5px; 
-            background: linear-gradient(90deg, #6e57e0, #ff62b2); 
+
+        .card p {
+            color: #ddd;
+        }
+
+        .card .custom-button {
+            display: block;
+            margin-top: 10px;
+            padding: 10px 15px;
+            background-color: #6e57e0;
+            color: white;
             border: none;
-            margin: 15px auto; 
-            opacity: 0.7; 
-            border-radius: 5px; 
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
         }
-        
+
+        .card .custom-button:hover {
+            background-color: #ff62b2;
+        }
+
+        .select-container {
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .select-container select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #6e57e0;
+            border-radius: 8px;
+            font-size: 16px;
+            background-color: #2d354a;
+            color: white;
+            appearance: none; /* Entfernt Standard-Pfeil */
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .select-container::after {
+            content: "▼";
+            position: absolute;
+            top: 48%;
+            right: 15px;
+            transform: translateY(-50%);
+            color: white;
+            font-size: 16px;
+            pointer-events: none;
+        }
+
+        .select-container select:hover,
+        .select-container select:focus {
+            border-color: #ff62b2;
+            background-color: #3a435a;
+            box-shadow: 0 0 10px rgba(255, 98, 178, 0.5);
+        }
+
+        .select-container select option {
+            background-color: #2d354a;
+            color: white;
+            font-size: 16px;
+            padding: 10px;
+        }
+
+        input[type="text"] {
+            width: 75%;
+            padding: 12px;
+            margin-bottom: 30px;
+            border: 2px solid #6e57e0;
+            border-radius: 8px;
+            font-size: 16px;
+            background-color: #2d354a;
+            color: white;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:hover,
+        input[type="text"]:focus {
+            border-color: #ff62b2;
+            background-color: #3a435a;
+            box-shadow: 0 0 10px rgba(255, 98, 178, 0.5);
+        }
+
     </style>
 </head>
 <body>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+                <div class="flash-message {{ category }}">
+                    <span>{{ message }}</span>
+                    <button class="close-btn" onclick="this.parentElement.style.display='none'">✖</button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
 
     <nav>
         <ul>
@@ -81,12 +154,46 @@
             <li><a href="/logout">🚪 Logout</a></li>
         </ul>
     </nav>
+
     <hr class="hr-line">
 
     <h1>Welcome, Admin!</h1>
     <div class="content">
         <p>Dies ist das Admin Dashboard.</p>
-        <a href="/logout" class="custom-button">Logout</a>
     </div>
+
+    <div class="card">
+        <h2>Reset Game</h2>
+        <p>This function resets the entire game state.</p>
+        <form method="POST" action="/reset_game">
+            <button type="submit" class="custom-button">Reset Game</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>Reset Player</h2>
+        <p>This function resets all player data.</p>
+        <form method="POST" action="/reset_players">
+            <button type="submit" class="custom-button">Reset Player</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>Add Points to Player</h2>
+        <p>Select a player and add points to their score.</p>
+        <form method="POST" action="/add_points">
+            <div class="select-container">
+                <select name="username" required>
+                    <option value="" disabled selected>Choose a Player</option>
+                    {% for player in players %}
+                        <option value="{{ player[0] }}">{{ player[1] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <input type="text" name="points" placeholder="Points" required>
+            <button type="submit" class="custom-button">Add Points</button>
+        </form>
+    </div>
+
 </body>
 </html>
