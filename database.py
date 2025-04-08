@@ -23,6 +23,15 @@ def init_db():
         )
     ''')
     c.execute('''
+        CREATE TABLE IF NOT EXISTS help (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            hint TEXT NOT NULL,
+            costs INTEGER NOT NULL,
+            challenge_id TEXT NOT NULL,
+            FOREIGN KEY (challenge_id) REFERENCES questions(id)
+        )
+    ''')
+    c.execute('''
         CREATE TABLE IF NOT EXISTS correct_answers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT,

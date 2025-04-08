@@ -5,6 +5,8 @@ import json
 import sqlite3
 from database import add_user, get_all_challenges, save_challenge, get_entire_points, buy_blackmarket_item, update_user_points
 from helpers import allowed_file
+import re
+from difflib import SequenceMatcher
 
 def configure_routes(app):
 
@@ -78,7 +80,7 @@ def configure_routes(app):
 
         answered_questions = []
         correct_answers = []
-        
+
         if 'username' in session:
             username = session['username']
             c.execute('SELECT challenge_id FROM answered_questions WHERE username = ?', (username,))
@@ -99,21 +101,42 @@ def configure_routes(app):
                 if challenge_id in correct_answers:
                     flash('You have already answered this question correctly!', 'info')
                 else:
-                    if user_answer.lower() == correct_solution.lower():
+                    # Normalize both answers for comparison
+                    normalized_user_answer = normalize_text(user_answer)
+                    normalized_solution = normalize_text(correct_solution)
+
+                    if normalized_user_answer == normalized_solution:
                         update_user_points(username, points)
-                        c.execute('INSERT INTO correct_answers (username, challenge_id) VALUES (?, ?)', (username, challenge_id))
+                        c.execute('INSERT INTO correct_answers (username, challenge_id) VALUES (?, ?)', 
+                                (username, challenge_id))
                         flash(f'Correct answer! You earned {points} points.', 'success')
                     else:
-                        flash('Wrong answer! Try again.', 'danger')
+                        # Calculate similarity for better feedback
+                        similarity = SequenceMatcher(None, normalized_user_answer, normalized_solution).ratio()
+                        if similarity > 0.8:
+                            flash('Very close! Check your spelling and formatting.', 'warning')
+                        else:
+                            flash('Wrong answer! Try again.', 'error')
 
                     if challenge_id not in answered_questions:
-                        c.execute('INSERT INTO answered_questions (username, challenge_id) VALUES (?, ?)', (username, challenge_id))
+                        c.execute('INSERT INTO answered_questions (username, challenge_id) VALUES (?, ?)', 
+                                (username, challenge_id))
 
                 conn.commit()
             return redirect(url_for('play_game'))
 
         conn.close()
-        return render_template('challenges.html', challenges=challenges, answered_questions=answered_questions, correct_answers=correct_answers)
+        return render_template('challenges.html', 
+                             challenges=challenges, 
+                             answered_questions=answered_questions, 
+                             correct_answers=correct_answers)
+
+    def normalize_text(text: str) -> str:
+        text = text.lower().strip()
+        text = re.sub(r'[-_]', ' ', text)
+        text = re.sub(r'[^a-z0-9\s]', '', text)
+        text = re.sub(r'\s+', ' ', text)
+        return text
 
     @app.route('/export_challenges', methods=['GET'])
     def export_challenges():
@@ -156,6 +179,25 @@ def configure_routes(app):
         c.execute('SELECT id, name FROM questions')  
         challenges = c.fetchall() 
         return render_template('add_challenge.html', challenges=challenges)
+    
+    @app.route('/add_hint', methods=['POST'])
+    def add_hint():
+        if 'role' in session and session['role'] == 'Admin':
+            challenge_id = request.form.get('challenge_id')
+            hint = request.form.get('hint')
+            costs = request.form.get('costs')
+
+            if challenge_id and hint and costs:
+                conn = sqlite3.connect('users.db')
+                c = conn.cursor()
+                c.execute('INSERT INTO help (challenge_id, hint, costs) VALUES (?, ?, ?)', (challenge_id, hint, costs))
+                conn.commit()
+                conn.close()
+                flash('Hint successfully added!', 'success')
+            else:
+                flash('Please fill in all fields', 'error')
+
+        return redirect(url_for('add_challenge'))
     
     @app.route('/delete_challenge', methods=['POST'])
     def delete_challenge():

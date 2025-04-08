@@ -1,0 +1,90 @@
+[{
+  "Name": "Kryptographie 1",
+  "Question": "Ein historisches Verschlüsselungsverfahren nutzt ein mechanisches Gerät mit sich drehenden Scheiben zur Verschlüsselung. Welche mathematische Eigenschaft machte diese Maschine anfällig für Kryptoanalyse?",
+  "Solution": "Periodizität der Rotorstellungen",
+  "Points": 20
+},
+{
+  "Name": "Netzwerke",
+  "Question": "Ein unbekannter Netzwerkdienst läuft auf Port 31337. Welche Art von Netzwerk-Scans kann verwendet werden, um herauszufinden, um welchen Dienst es sich handelt, ohne eine vollständige Verbindung herzustellen?",
+  "Solution": "SYN-Scan",
+  "Points": 20
+},
+{
+  "Name": "Reverse Engineering",
+  "Question": "Ein ausführbares Programm enthält keine symbolischen Debugging-Informationen, aber eine Analyse der Binärdatei zeigt Referenzen auf verdächtige Speicheradressen. Welche Technik könnte helfen, die Funktion des Codes zu verstehen?",
+  "Solution": "Dynamische Analyse mit einem Debugger",
+  "Points": 25
+},
+{
+  "Name": "Programmierung",
+  "Question": "Eine obskure Programmiersprache verwendet einen Stack-basierten Ansatz anstelle eines traditionellen Speichermodells. Wie nennt man diese Art von Sprache?",
+  "Solution": "Konkatenative Sprache",
+  "Points": 25
+},
+{
+  "Name": "Betriebssysteme",
+  "Question": "Moderne Betriebssysteme nutzen Virtual Memory Management. Welche spezielle Technik wird verwendet, um den 'Thrashing'-Effekt zu minimieren?",
+  "Solution": "Working Set Modell",
+  "Points": 20
+},
+{
+  "Name": "Kryptographie 2",
+  "Question": "Ein asymmetrisches Kryptosystem erzeugt eine signierte Nachricht, deren Länge fast der doppelten Größe der ursprünglichen Nachricht entspricht. Welche Eigenschaft der Signatur könnte darauf hinweisen?",
+  "Solution": "Fehlendes Hashing vor der Signaturerstellung",
+  "Points": 25
+},
+{
+  "Name": "Cybersecurity",
+  "Question": "Ein Linux-Server wird kompromittiert, und ein Angreifer installiert eine modifizierte Version von '/bin/ls'. Welche Technik könnte helfen, solche Manipulationen zu erkennen?",
+  "Solution": "Prüfsummenvergleich mit Tripwire",
+  "Points": 25
+},
+{
+  "Name": "Web-Sicherheit",
+  "Question": "Ein Angreifer nutzt einen 'Referer'-Header, um Zugriff auf eine geschützte Ressource zu erhalten. Welche Sicherheitsmaßnahme könnte diesen Angriff verhindern?",
+  "Solution": "Token-basierte Authentifizierung",
+  "Points": 20
+},
+{
+  "Name": "Datenbanken",
+  "Question": "Ein Angreifer führt eine SQL-Injection durch, erhält jedoch keine sichtbaren Fehler oder Ergebnisse. Welche Technik könnte er verwenden, um dennoch Daten auszulesen?",
+  "Solution": "Zeitbasierte Blind SQL Injection",
+  "Points": 25
+},
+{
+  "Name": "Netzwerkprotokolle",
+  "Question": "Ein DNS-Resolver beantwortet eine Anfrage mit einer IP-Adresse, die eine Verbindung zu einer schädlichen Website herstellt. Welche Angriffstechnik wurde hier wahrscheinlich verwendet?",
+  "Solution": "DNS Cache Poisoning",
+  "Points": 25
+},
+{
+  "Name": "Malware-Analyse",
+  "Question": "Ein Schadprogramm verhält sich unterschiedlich, wenn es erkennt, dass es in einer virtuellen Maschine ausgeführt wird. Welche Technik wird hier verwendet?",
+  "Solution": "Sandbox Evasion",
+  "Points": 25
+},
+{
+  "Name": "Steganographie",
+  "Question": "Eine Nachricht wird in einem Bild versteckt, aber die Farbhistogramme des Bildes zeigen auffällige Muster. Welche Technik könnte der Verteidiger nutzen, um die versteckte Nachricht zu entdecken?",
+  "Solution": "Chi-Quadrat-Test auf Pixelverteilung",
+  "Points": 25
+},
+{
+  "Name": "Künstliche Intelligenz",
+  "Question": "Ein Machine-Learning-Modell klassifiziert Bilder mit hoher Genauigkeit, aber nach minimalen Modifikationen durch einen Angreifer gibt es falsche Klassifikationen. Welche Angriffstechnik wurde angewendet?",
+  "Solution": "Adversarial Attack",
+  "Points": 30
+},
+{
+  "Name": "Forensik",
+  "Question": "Ein forensischer Ermittler analysiert eine manipulierte Datei und stellt fest, dass die Metadaten verändert wurden. Welche Methode könnte zur Rekonstruktion der Originaldaten hilfreich sein?",
+  "Solution": "Analyse von Journal-Dateien",
+  "Points": 30
+},
+{
+  "Name": "Compilerbau",
+  "Question": "Ein Just-in-Time-Compiler optimiert Code zur Laufzeit basierend auf den ausgeführten Codepfaden. Welche Technik ermöglicht diese Optimierung?",
+  "Solution": "Spekulative Optimierung",
+  "Points": 30
+}]
