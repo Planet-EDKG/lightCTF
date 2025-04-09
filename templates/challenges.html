@@ -128,9 +128,9 @@
                     <div class="challenge-header">
                         <h3>{{ challenge[1] }}</h3>
                         {% if hints and (challenge[0]|string) in hints %}
-                            <button class="hint-button {% if (challenge[0]|string) in purchased_hints %}purchased{% endif %}"
-                                onclick="showHintPopup({{ challenge[0] }}, {{ hints[challenge[0]|string].costs }}, `{{ hints[challenge[0]|string].hint }}`, {{ (challenge[0]|string) in purchased_hints|tojson }})">
-                                💡 {% if (challenge[0]|string) in purchased_hints %}Zeige Hinweis{% else %}Hinweis ({{ hints[challenge[0]|string].costs }} Punkte){% endif %}
+                            <button class="hint-button {% if challenge[0] in purchased_hints %}purchased{% endif %}"
+                                onclick="showHintPopup({{ challenge[0] }}, {{ hints[challenge[0]|string].costs }}, '{{ hints[challenge[0]|string].hint }}', {{ (challenge[0] in purchased_hints)|tojson }})">
+                                💡 {% if challenge[0] in purchased_hints %}Zeige Hinweis{% else %}Hinweis ({{ hints[challenge[0]|string].costs }} Punkte){% endif %}
                             </button>
                         {% endif %}
                     </div>
@@ -150,19 +150,27 @@
         </div>
     </div>
 
-    <!-- Hint popup overlay -->
-    <div id="hintPopup" class="popup-overlay">
+    <!-- Purchase Hint popup overlay -->
+    <div id="purchaseHintPopup" class="popup-overlay">
         <div class="popup-content">
             <h3>Hinweis kaufen</h3>
             <p id="hintConfirmationText">
                 Möchtest du diesen Hinweis für <span id="hintCost"></span> Punkte kaufen?
             </p>
-            <div id="hintContentContainer" style="display: none;">
-                <div class="hint-content" id="hintContent"></div>
-            </div>
             <div class="popup-buttons">
-                <button class="btn btn-secondary" onclick="closeHintPopup()">Abbrechen</button>
-                <button class="btn btn-primary" id="buyHintButton" onclick="confirmHint()">Kaufen</button>
+                <button class="btn btn-secondary" onclick="closePopup('purchaseHintPopup')">Abbrechen</button>
+                <button class="btn btn-primary" onclick="confirmHint()">Kaufen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Hint popup overlay -->
+    <div id="viewHintPopup" class="popup-overlay">
+        <div class="popup-content">
+            <h3>Hinweis</h3>
+            <div class="hint-content" id="hintContent"></div>
+            <div class="popup-buttons">
+                <button class="btn btn-primary" onclick="closePopup('viewHintPopup')">Schließen</button>
             </div>
         </div>
     </div>
@@ -179,40 +187,22 @@
             currentHintCost = cost;
             currentHint = hint;
             
-            const hintPopup = document.getElementById('hintPopup');
-            const hintConfirmationText = document.getElementById('hintConfirmationText');
-            const hintContent = document.getElementById('hintContent');
-            const hintContentContainer = document.getElementById('hintContentContainer');
-            const buyButton = document.getElementById('buyHintButton');
-            const hintCost = document.getElementById('hintCost');
-            
             if (isPurchased) {
-                hintConfirmationText.style.display = 'none';
-                hintContent.textContent = hint;
-                hintContentContainer.style.display = 'block';
-                buyButton.textContent = 'Schließen';
+                // Show the hint directly if already purchased
+                document.getElementById('hintContent').textContent = hint;
+                document.getElementById('viewHintPopup').style.display = 'flex';
             } else {
-                hintCost.textContent = cost;
-                hintContentContainer.style.display = 'none';
-                hintConfirmationText.style.display = 'block';
-                buyButton.textContent = 'Kaufen';
+                // Show purchase confirmation if not purchased
+                document.getElementById('hintCost').textContent = cost;
+                document.getElementById('purchaseHintPopup').style.display = 'flex';
             }
-            
-            hintPopup.style.display = 'flex';
         }
 
-        function closeHintPopup() {
-            document.getElementById('hintPopup').style.display = 'none';
+        function closePopup(popupId) {
+            document.getElementById(popupId).style.display = 'none';
         }
         
         function confirmHint() {
-            const buyButton = document.getElementById('buyHintButton');
-            
-            if (buyButton.textContent === 'Schließen') {
-                closeHintPopup();
-                return;
-            }
-        
             fetch('/buy_hint', {
                 method: 'POST',
                 headers: {
@@ -226,10 +216,12 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    // Close purchase popup
+                    closePopup('purchaseHintPopup');
+                    
+                    // Show the hint content in the view popup
                     document.getElementById('hintContent').textContent = currentHint;
-                    document.getElementById('hintContentContainer').style.display = 'block';
-                    document.getElementById('hintConfirmationText').style.display = 'none';
-                    buyButton.textContent = 'Schließen';
+                    document.getElementById('viewHintPopup').style.display = 'flex';
                     
                     // Update button style and text
                     const hintButton = document.querySelector(`button[onclick*="showHintPopup(${currentChallengeId},"]`);
@@ -241,15 +233,15 @@
                     }
                 } else {
                     alert(data.error || 'Fehler beim Kauf des Hinweises');
-                    closeHintPopup();
+                    closePopup('purchaseHintPopup');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
                 alert('Ein Fehler ist aufgetreten');
-                closeHintPopup();
+                closePopup('purchaseHintPopup');
             });
         }
-        </script>
+    </script>
 </body>
 </html>

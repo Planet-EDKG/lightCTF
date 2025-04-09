@@ -251,7 +251,7 @@ def configure_routes(app):
             return jsonify({'success': True, 'alreadyPurchased': True})
 
         # Prüfe Punktestand
-        c.execute('SELECT score FROM users WHERE username = ?', (username,))
+        c.execute('SELECT blackmarket_points FROM users WHERE username = ?', (username,))
         current_points = c.fetchone()[0]
 
         if current_points < int(points_cost):
@@ -260,7 +260,7 @@ def configure_routes(app):
 
         # Ziehe Punkte ab und speichere den Kauf
         new_points = current_points - int(points_cost)
-        c.execute('UPDATE users SET score = ? WHERE username = ?', (new_points, username))
+        c.execute('UPDATE users SET blackmarket_points = ? WHERE username = ?', (new_points, username))
         c.execute('INSERT INTO purchased_hints (username, challenge_id) VALUES (?, ?)', 
                  (username, challenge_id))
         conn.commit()
