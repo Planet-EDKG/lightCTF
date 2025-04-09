@@ -32,6 +32,16 @@ def init_db():
         )
     ''')
     c.execute('''
+        CREATE TABLE IF NOT EXISTS purchased_hints (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL,
+            challenge_id INTEGER NOT NULL,
+            FOREIGN KEY (username) REFERENCES users(username),
+            FOREIGN KEY (challenge_id) REFERENCES questions(id),
+            UNIQUE(username, challenge_id)
+        )
+    ''')
+    c.execute('''
         CREATE TABLE IF NOT EXISTS correct_answers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT,

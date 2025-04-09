@@ -1,4 +1,4 @@
-from flask import render_template, request, redirect, url_for, session, flash, send_file
+from flask import render_template, request, redirect, url_for, session, flash, send_file, jsonify
 from werkzeug.utils import secure_filename
 import os
 import json
@@ -75,9 +75,27 @@ def configure_routes(app):
     def play_game():
         conn = sqlite3.connect('users.db')
         c = conn.cursor()
-        c.execute('SELECT id, name, question, solution, points FROM questions')
-        challenges = c.fetchall()
 
+        # Join questions with help table to get all challenge data including hints
+        c.execute('''
+            SELECT q.id, q.name, q.question, q.solution, q.points,
+                   h.hint, h.costs
+            FROM questions q
+            LEFT JOIN help h ON q.id = h.challenge_id
+        ''')
+        
+        challenges_data = c.fetchall()
+        challenges = []
+        hints = {}
+        
+        # Process the joined data
+        for row in challenges_data:
+            challenge_id = row[0]
+            challenges.append((challenge_id, row[1], row[2], row[3], row[4]))
+            if row[5]:  # If hint exists (not NULL)
+                # Convert challenge_id to string when storing in hints dictionary
+                hints[str(challenge_id)] = {'hint': row[5], 'costs': row[6]}
+        
         answered_questions = []
         correct_answers = []
 
@@ -88,6 +106,17 @@ def configure_routes(app):
 
             c.execute('SELECT challenge_id FROM correct_answers WHERE username = ?', (username,))
             correct_answers = [row[0] for row in c.fetchall()]
+        
+        if 'username' in session:
+            username = session['username']
+            c.execute('''
+            SELECT ph.challenge_id 
+            FROM purchased_hints ph 
+            WHERE ph.username = ?
+            ''', (username,))
+            purchased_hints = [row[0] for row in c.fetchall()]
+        else:
+            purchased_hints = []
 
         if request.method == 'POST':
             challenge_id = int(request.form['challenge_id'])
@@ -129,7 +158,9 @@ def configure_routes(app):
         return render_template('challenges.html', 
                              challenges=challenges, 
                              answered_questions=answered_questions, 
-                             correct_answers=correct_answers)
+                             correct_answers=correct_answers,
+                             hints=hints,
+                             purchased_hints=purchased_hints)
 
     def normalize_text(text: str) -> str:
         text = text.lower().strip()
@@ -198,6 +229,48 @@ def configure_routes(app):
                 flash('Please fill in all fields', 'error')
 
         return redirect(url_for('add_challenge'))
+    
+    @app.route('/buy_hint', methods=['POST'])
+    def buy_hint():
+        if 'username' not in session:
+            return jsonify({'success': False, 'error': 'Not logged in'})
+
+        data = request.get_json()
+        points_cost = data.get('points')
+        challenge_id = data.get('challengeId')
+        username = session['username']
+
+        conn = sqlite3.connect('users.db')
+        c = conn.cursor()
+
+        # Prüfe ob der Hint bereits gekauft wurde
+        c.execute('SELECT id FROM purchased_hints WHERE username = ? AND challenge_id = ?', 
+                 (username, challenge_id))
+        if c.fetchone():
+            conn.close()
+            return jsonify({'success': True, 'alreadyPurchased': True})
+
+        # Prüfe Punktestand
+        c.execute('SELECT score FROM users WHERE username = ?', (username,))
+        current_points = c.fetchone()[0]
+
+        if current_points < int(points_cost):
+            conn.close()
+            return jsonify({'success': False, 'error': 'Not enough points'})
+
+        # Ziehe Punkte ab und speichere den Kauf
+        new_points = current_points - int(points_cost)
+        c.execute('UPDATE users SET score = ? WHERE username = ?', (new_points, username))
+        c.execute('INSERT INTO purchased_hints (username, challenge_id) VALUES (?, ?)', 
+                 (username, challenge_id))
+        conn.commit()
+        conn.close()
+
+        return jsonify({
+            'success': True,
+            'newPoints': new_points,
+            'alreadyPurchased': False
+        })
     
     @app.route('/delete_challenge', methods=['POST'])
     def delete_challenge():

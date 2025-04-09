@@ -5,6 +5,85 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Play Game</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Popup styles */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .popup-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        .popup-buttons {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .hint-button {
+            background-color: #ffcc00;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        
+        .hint-content {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-left: 3px solid #ffcc00;
+        }
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .popup-content {
+            background-color: white;
+            color: black;
+            padding: 20px;
+            border-radius: 5px;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .hint-button {
+            background-color: #17a2b8;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .hint-button.purchased {
+            background-color: #28a745;
+        }
+    </style>
 </head>
 <body>
 
@@ -46,17 +125,131 @@
             <h1>Beantworte eine Frage</h1>
             {% for challenge in challenges %}
                 <div class="challenge-card {% if challenge[0] in correct_answers %}disabled{% endif %}">
-                    <h3>{{ challenge[1] }}</h3>
+                    <div class="challenge-header">
+                        <h3>{{ challenge[1] }}</h3>
+                        {% if hints and (challenge[0]|string) in hints %}
+                            <button class="hint-button {% if (challenge[0]|string) in purchased_hints %}purchased{% endif %}"
+                                onclick="showHintPopup({{ challenge[0] }}, {{ hints[challenge[0]|string].costs }}, `{{ hints[challenge[0]|string].hint }}`, {{ (challenge[0]|string) in purchased_hints|tojson }})">
+                                💡 {% if (challenge[0]|string) in purchased_hints %}Zeige Hinweis{% else %}Hinweis ({{ hints[challenge[0]|string].costs }} Punkte){% endif %}
+                            </button>
+                        {% endif %}
+                    </div>
                     <p>{{ challenge[2] }}</p>
                     <form method="POST">
                         <input type="hidden" name="challenge_id" value="{{ challenge[0] }}">
-                        <input type="text" name="answer_{{ challenge[0] }}" placeholder="Deine Antwort" {% if challenge[0] in correct_answers %}disabled{% endif %}>
-                        <button type="submit" {% if challenge[0] in correct_answers %}disabled{% endif %}>Antworten</button>
+                        <input type="text" name="answer_{{ challenge[0] }}" 
+                               placeholder="Deine Antwort" 
+                               {% if challenge[0] in correct_answers %}disabled{% endif %}>
+                        <button type="submit" 
+                                {% if challenge[0] in correct_answers %}disabled{% endif %}>
+                            Antworten
+                        </button>
                     </form>
                 </div>
             {% endfor %}
         </div>
     </div>
 
+    <!-- Hint popup overlay -->
+    <div id="hintPopup" class="popup-overlay">
+        <div class="popup-content">
+            <h3>Hinweis kaufen</h3>
+            <p id="hintConfirmationText">
+                Möchtest du diesen Hinweis für <span id="hintCost"></span> Punkte kaufen?
+            </p>
+            <div id="hintContentContainer" style="display: none;">
+                <div class="hint-content" id="hintContent"></div>
+            </div>
+            <div class="popup-buttons">
+                <button class="btn btn-secondary" onclick="closeHintPopup()">Abbrechen</button>
+                <button class="btn btn-primary" id="buyHintButton" onclick="confirmHint()">Kaufen</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentChallengeId = null;
+        let currentHintCost = null;
+        let currentHint = null;
+        
+        function showHintPopup(challengeId, cost, hint, isPurchased) {
+            console.log('showHintPopup called:', { challengeId, cost, hint, isPurchased }); // Debug-Ausgabe
+            
+            currentChallengeId = challengeId;
+            currentHintCost = cost;
+            currentHint = hint;
+            
+            const hintPopup = document.getElementById('hintPopup');
+            const hintConfirmationText = document.getElementById('hintConfirmationText');
+            const hintContent = document.getElementById('hintContent');
+            const hintContentContainer = document.getElementById('hintContentContainer');
+            const buyButton = document.getElementById('buyHintButton');
+            const hintCost = document.getElementById('hintCost');
+            
+            if (isPurchased) {
+                hintConfirmationText.style.display = 'none';
+                hintContent.textContent = hint;
+                hintContentContainer.style.display = 'block';
+                buyButton.textContent = 'Schließen';
+            } else {
+                hintCost.textContent = cost;
+                hintContentContainer.style.display = 'none';
+                hintConfirmationText.style.display = 'block';
+                buyButton.textContent = 'Kaufen';
+            }
+            
+            hintPopup.style.display = 'flex';
+        }
+
+        function closeHintPopup() {
+            document.getElementById('hintPopup').style.display = 'none';
+        }
+        
+        function confirmHint() {
+            const buyButton = document.getElementById('buyHintButton');
+            
+            if (buyButton.textContent === 'Schließen') {
+                closeHintPopup();
+                return;
+            }
+        
+            fetch('/buy_hint', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    challengeId: currentChallengeId,
+                    points: currentHintCost
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('hintContent').textContent = currentHint;
+                    document.getElementById('hintContentContainer').style.display = 'block';
+                    document.getElementById('hintConfirmationText').style.display = 'none';
+                    buyButton.textContent = 'Schließen';
+                    
+                    // Update button style and text
+                    const hintButton = document.querySelector(`button[onclick*="showHintPopup(${currentChallengeId},"]`);
+                    hintButton.classList.add('purchased');
+                    hintButton.textContent = '💡 Zeige Hinweis';
+                    
+                    if (!data.alreadyPurchased && document.getElementById('userPoints')) {
+                        document.getElementById('userPoints').textContent = data.newPoints;
+                    }
+                } else {
+                    alert(data.error || 'Fehler beim Kauf des Hinweises');
+                    closeHintPopup();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Ein Fehler ist aufgetreten');
+                closeHintPopup();
+            });
+        }
+        </script>
 </body>
 </html>
