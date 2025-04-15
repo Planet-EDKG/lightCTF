@@ -8,11 +8,9 @@ import os
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# Initialize database
 init_db()
 refresh_database()
 
-# Create default users if database is empty
 conn = sqlite3.connect('users.db')
 c = conn.cursor()
 c.execute('SELECT COUNT(*) FROM users')
@@ -23,10 +21,8 @@ if user_count == 0:
     add_user('admin', 'adminpass', 'Admin')
     add_user('user', 'userpass', 'Player')
 
-# Configure routes
 configure_routes(app)
 
-# Production settings
 if os.environ.get('RENDER'):
     app.config['SESSION_COOKIE_SECURE'] = True
     app.config['SESSION_COOKIE_HTTPONLY'] = True
