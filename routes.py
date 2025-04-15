@@ -432,3 +432,7 @@ def configure_routes(app):
 
             flash(f'Added {points} points to {username} successfully!', 'success')
         return redirect(url_for('admin_dashboard'))
+    
+    @app.route('/health')
+    def health_check():
+        return jsonify({"status": "healthy"}), 200
