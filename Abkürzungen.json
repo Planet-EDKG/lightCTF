@@ -1,0 +1,92 @@
+[
+  {
+    "Name": "Netzwerk 1",
+    "Question": "Wie heißt die Abkürzung für das Protokoll, das Webseiten über das Internet lädt?",
+    "Solution": "HTTP",
+    "Points": 5
+  },
+  {
+    "Name": "Netzwerk 2",
+    "Question": "Wie lautet die Abkürzung für das sichere Protokoll, das oft zusammen mit HTTP verwendet wird?",
+    "Solution": "HTTPS",
+    "Points": 5
+  },
+  {
+    "Name": "Netzwerk 3",
+    "Question": "Wie nennt man die Abkürzung für das System, das Domainnamen in IP-Adressen umwandelt?",
+    "Solution": "DNS",
+    "Points": 5
+  },
+  {
+    "Name": "Sicherheit 1",
+    "Question": "Wie lautet die Abkürzung für ein häufig genutztes Antiviren-Programm eines großen US-amerikanischen Herstellers (z. B. 'Windows ___')?",
+    "Solution": "AV",
+    "Points": 5
+  },
+  {
+    "Name": "Sicherheit 2",
+    "Question": "Wie nennt man die Abkürzung für die zweistufige Sicherheitsüberprüfung bei Logins?",
+    "Solution": "2FA",
+    "Points": 5
+  },
+  {
+    "Name": "Sicherheit 3",
+    "Question": "Wie lautet die Abkürzung für den Begriff, der für Schwachstellen in Programmen steht, die ausgenutzt werden können?",
+    "Solution": "CVEs",
+    "Points": 5
+  },
+  {
+    "Name": "Dateiformate 1",
+    "Question": "Wie lautet die Abkürzung für ein bekanntes, komprimiertes Bildformat im Internet?",
+    "Solution": "JPEG",
+    "Points": 5
+  },
+  {
+    "Name": "Dateiformate 2",
+    "Question": "Wie nennt man die Abkürzung für ein weit verbreitetes Dokumentformat, das überall gleich aussieht?",
+    "Solution": "PDF",
+    "Points": 5
+  },
+  {
+    "Name": "Kryptographie 1",
+    "Question": "Wie nennt man die Abkürzung für ein sicheres Verschlüsselungsverfahren mit drei Schlüsseln, das früher häufig bei Banken verwendet wurde?",
+    "Solution": "3DES",
+    "Points": 5
+  },
+  {
+    "Name": "Betriebssysteme 1",
+    "Question": "Wie nennt man die Abkürzung für ein freies, offenes Betriebssystem, das auf vielen Servern läuft?",
+    "Solution": "Linux",
+    "Points": 5
+  },
+  {
+    "Name": "Internetdienste 1",
+    "Question": "Wie nennt man die Abkürzung für den Service, mit dem man E-Mails versenden kann?",
+    "Solution": "SMTP",
+    "Points": 5
+  },
+  {
+    "Name": "Internetdienste 2",
+    "Question": "Wie lautet die Abkürzung für das Protokoll, mit dem man Dateien über das Internet herunterladen kann?",
+    "Solution": "FTP",
+    "Points": 5
+  },
+  {
+    "Name": "Netzwerk 4",
+    "Question": "Wie nennt man die Abkürzung für die eindeutige Nummer, die jedes Gerät im Internet bekommt?",
+    "Solution": "IP",
+    "Points": 5
+  },
+  {
+    "Name": "Hardware 1",
+    "Question": "Wie nennt man die Abkürzung für den Speicher, der beim Einschalten des Computers gelöscht wird?",
+    "Solution": "RAM",
+    "Points": 5
+  },
+  {
+    "Name": "Hardware 2",
+    "Question": "Wie nennt man die Abkürzung für das zentrale Rechenelement im Computer?",
+    "Solution": "CPU",
+    "Points": 5
+  }
+]
