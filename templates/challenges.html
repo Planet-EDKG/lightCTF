@@ -83,6 +83,66 @@
         .hint-button.purchased {
             background-color: #28a745;
         }
+
+        .sidebar li a {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            padding: 5px;
+        }
+
+        .sidebar li a:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .floating-flash-message {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2000;
+            min-width: 300px;
+            max-width: 80%;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .floating-flash-message.success {
+            background-color: #d4edda;
+            border: 2px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .floating-flash-message.error {
+            background-color: #f8d7da;
+            border: 2px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -60%);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0 5px;
+        }
     </style>
 </head>
 <body>
@@ -111,38 +171,40 @@
     <hr class="hr-line">
     <div class="card-container">
         <div class="sidebar">
-            <h3>Fragen Übersicht</h3>
+            <h3>Question Overview</h3>
             <ul>
                 {% for challenge in challenges %}
                     <li class="{% if challenge[0] in correct_answers %}correct{% elif challenge[0] in answered_questions %}answered{% endif %}">
-                        Frage {{ loop.index }}
+                        <a href="#challenge-{{ challenge[0] }}" onclick="scrollToChallenge({{ challenge[0] }})">
+                            Question {{ loop.index }}
+                        </a>
                     </li>
                 {% endfor %}
             </ul>
         </div>        
 
         <div class="main-content">
-            <h1>Beantworte eine Frage</h1>
+            <h1>Submit a question</h1>
             {% for challenge in challenges %}
-                <div class="challenge-card {% if challenge[0] in correct_answers %}disabled{% endif %}">
+                <div id="challenge-{{ challenge[0] }}" class="challenge-card {% if challenge[0] in correct_answers %}disabled{% endif %}">
                     <div class="challenge-header">
                         <h3>{{ challenge[1] }}</h3>
                         {% if hints and (challenge[0]|string) in hints %}
                             <button class="hint-button {% if challenge[0] in purchased_hints %}purchased{% endif %}"
                                 onclick="showHintPopup({{ challenge[0] }}, {{ hints[challenge[0]|string].costs }}, '{{ hints[challenge[0]|string].hint }}', {{ (challenge[0] in purchased_hints)|tojson }})">
-                                💡 {% if challenge[0] in purchased_hints %}Zeige Hinweis{% else %}Hinweis ({{ hints[challenge[0]|string].costs }} Punkte){% endif %}
+                                💡 {% if challenge[0] in purchased_hints %}Show hint{% else %}Hint({{ hints[challenge[0]|string].costs }} Points){% endif %}
                             </button>
                         {% endif %}
                     </div>
                     <p>{{ challenge[2] }}</p>
-                    <form method="POST">
+                    <form onsubmit="submitAnswer(event, {{ challenge[0] }})">
                         <input type="hidden" name="challenge_id" value="{{ challenge[0] }}">
                         <input type="text" name="answer_{{ challenge[0] }}" 
                                placeholder="Deine Antwort" 
                                {% if challenge[0] in correct_answers %}disabled{% endif %}>
                         <button type="submit" 
                                 {% if challenge[0] in correct_answers %}disabled{% endif %}>
-                            Antworten
+                            Submit
                         </button>
                     </form>
                 </div>
@@ -153,13 +215,13 @@
     <!-- Purchase Hint popup overlay -->
     <div id="purchaseHintPopup" class="popup-overlay">
         <div class="popup-content">
-            <h3>Hinweis kaufen</h3>
+            <h3>Buy hint</h3>
             <p id="hintConfirmationText">
-                Möchtest du diesen Hinweis für <span id="hintCost"></span> Punkte kaufen?
+                Do you want to buy this hint for <span id="hintCost"></span> points?
             </p>
             <div class="popup-buttons">
-                <button class="btn btn-secondary" onclick="closePopup('purchaseHintPopup')">Abbrechen</button>
-                <button class="btn btn-primary" onclick="confirmHint()">Kaufen</button>
+                <button class="btn btn-secondary" onclick="closePopup('purchaseHintPopup')">Cancel</button>
+                <button class="btn btn-primary" onclick="confirmHint()">Buy</button>
             </div>
         </div>
     </div>
@@ -167,10 +229,10 @@
     <!-- View Hint popup overlay -->
     <div id="viewHintPopup" class="popup-overlay">
         <div class="popup-content">
-            <h3>Hinweis</h3>
+            <h3>Hint</h3>
             <div class="hint-content" id="hintContent"></div>
             <div class="popup-buttons">
-                <button class="btn btn-primary" onclick="closePopup('viewHintPopup')">Schließen</button>
+                <button class="btn btn-primary" onclick="closePopup('viewHintPopup')">Close</button>
             </div>
         </div>
     </div>
@@ -241,6 +303,83 @@
                 alert('Ein Fehler ist aufgetreten');
                 closePopup('purchaseHintPopup');
             });
+        }
+
+        function scrollToChallenge(challengeId) {
+            const element = document.getElementById(`challenge-${challengeId}`);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        function submitAnswer(event, challengeId) {
+            event.preventDefault();
+            
+            const form = event.target;
+            const answer = form.querySelector(`input[name="answer_${challengeId}"]`).value;
+            
+            fetch('/challenges', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `challenge_id=${challengeId}&answer_${challengeId}=${encodeURIComponent(answer)}`
+            })
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // Extract flash message and its category
+                const flashMessage = doc.querySelector('.flash-message');
+                if (flashMessage) {
+                    const messageText = flashMessage.querySelector('span').textContent;
+                    const category = flashMessage.classList.contains('success') ? 'success' : 'error';
+                    
+                    // Create and show floating flash message
+                    showFloatingFlash(messageText, category);
+                }
+                
+                // Check if answer was correct
+                const isCorrect = doc.querySelector(`#challenge-${challengeId}`).classList.contains('disabled');
+                if (isCorrect) {
+                    form.querySelector('input[type="text"]').disabled = true;
+                    form.querySelector('button').disabled = true;
+                    
+                    const sidebarItem = document.querySelector(`a[href="#challenge-${challengeId}"]`).parentElement;
+                    sidebarItem.classList.add('correct');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showFloatingFlash('Ein Fehler ist aufgetreten', 'error');
+            });
+        }
+
+        function showFloatingFlash(message, category) {
+            // Remove any existing flash messages
+            const existingFlash = document.querySelector('.floating-flash-message');
+            if (existingFlash) {
+                existingFlash.remove();
+            }
+            
+            // Create new flash message
+            const flashDiv = document.createElement('div');
+            flashDiv.className = `floating-flash-message ${category}`;
+            flashDiv.innerHTML = `
+                <span>${message}</span>
+                <button class="close-btn" onclick="this.parentElement.remove()">✖</button>
+            `;
+            
+            // Add to document
+            document.body.appendChild(flashDiv);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (flashDiv.parentElement) {
+                    flashDiv.remove();
+                }
+            }, 5000);
         }
     </script>
 </body>
