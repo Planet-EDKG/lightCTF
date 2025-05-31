@@ -76,9 +76,8 @@ def configure_routes(app):
         conn = sqlite3.connect('users.db')
         c = conn.cursor()
 
-        # Join questions with help table to get all challenge data including hints
         c.execute('''
-            SELECT q.id, q.name, q.question, q.solution, q.points,
+            SELECT q.id, q.name, q.question, q.solution, q.points, q.options,
                    h.hint, h.costs
             FROM questions q
             LEFT JOIN help h ON q.id = h.challenge_id
@@ -88,13 +87,20 @@ def configure_routes(app):
         challenges = []
         hints = {}
         
-        # Process the joined data
         for row in challenges_data:
             challenge_id = row[0]
-            challenges.append((challenge_id, row[1], row[2], row[3], row[4]))
-            if row[5]:  # If hint exists (not NULL)
-                # Convert challenge_id to string when storing in hints dictionary
-                hints[str(challenge_id)] = {'hint': row[5], 'costs': row[6]}
+            options = json.loads(row[5]) if row[5] else []  # Parse JSON options
+            challenge = {
+                'id': challenge_id,
+                'name': row[1],
+                'question': row[2],
+                'solution': row[3],
+                'points': row[4],
+                'options': options
+            }
+            challenges.append(challenge)
+            if row[6]:  # hint exists
+                hints[str(challenge_id)] = {'hint': row[6], 'costs': row[7]}
         
         answered_questions = []
         correct_answers = []
@@ -106,9 +112,7 @@ def configure_routes(app):
 
             c.execute('SELECT challenge_id FROM correct_answers WHERE username = ?', (username,))
             correct_answers = [row[0] for row in c.fetchall()]
-        
-        if 'username' in session:
-            username = session['username']
+
             c.execute('''
             SELECT ph.challenge_id 
             FROM purchased_hints ph 
@@ -121,29 +125,40 @@ def configure_routes(app):
         if request.method == 'POST':
             challenge_id = int(request.form['challenge_id'])
             user_answer = request.form.get(f'answer_{challenge_id}', '').strip()
-            c.execute('SELECT solution, points FROM questions WHERE id = ?', (challenge_id,))
+            
+            # Get challenge details including options
+            c.execute('SELECT solution, points, options FROM questions WHERE id = ?', (challenge_id,))
             challenge = c.fetchone()
 
-            if challenge:
-                correct_solution, points = challenge
+            if challenge and 'username' in session:
+                correct_solution, points, options_json = challenge
+                options = json.loads(options_json) if options_json else None
+                username = session['username']
 
                 if challenge_id in correct_answers:
                     flash('You have already answered this question correctly!', 'info')
                 else:
-                    # Normalize both answers for comparison
-                    normalized_user_answer = normalize_text(user_answer)
-                    normalized_solution = normalize_text(correct_solution)
+                    # Check if it's a multiple choice question
+                    if options:
+                        is_correct = user_answer == correct_solution
+                    else:
+                        # For text questions, use the normalize function
+                        normalized_user_answer = normalize_text(user_answer)
+                        normalized_solution = normalize_text(correct_solution)
+                        is_correct = normalized_user_answer == normalized_solution
 
-                    if normalized_user_answer == normalized_solution:
+                    if is_correct:
                         update_user_points(username, points)
                         c.execute('INSERT INTO correct_answers (username, challenge_id) VALUES (?, ?)', 
                                 (username, challenge_id))
                         flash(f'Correct answer! You earned {points} points.', 'success')
                     else:
-                        # Calculate similarity for better feedback
-                        similarity = SequenceMatcher(None, normalized_user_answer, normalized_solution).ratio()
-                        if similarity > 0.8:
-                            flash('Very close! Check your spelling and formatting.', 'warning')
+                        if not options:
+                            similarity = SequenceMatcher(None, normalized_user_answer, normalized_solution).ratio()
+                            if similarity > 0.8:
+                                flash('Very close! Check your spelling and formatting.', 'warning')
+                            else:
+                                flash('Wrong answer! Try again.', 'error')
                         else:
                             flash('Wrong answer! Try again.', 'error')
 
@@ -152,7 +167,6 @@ def configure_routes(app):
                                 (username, challenge_id))
 
                 conn.commit()
-            return redirect(url_for('play_game'))
 
         conn.close()
         return render_template('challenges.html', 
@@ -182,6 +196,9 @@ def configure_routes(app):
 
     @app.route('/add_challenge', methods=['GET', 'POST'])
     def add_challenge():
+        if 'role' not in session or session['role'] != 'Admin':
+            return redirect(url_for('login'))
+
         if request.method == 'POST':
             if 'file' in request.files:
                 file = request.files['file']
@@ -191,7 +208,14 @@ def configure_routes(app):
                     with open(file_path, 'r', encoding='utf-8') as f:
                         challenges = json.load(f)
                         for challenge in challenges:
-                            save_challenge(challenge["Name"], challenge["Question"], challenge["Solution"], challenge["Points"])
+                            save_challenge(
+                                challenge["Name"], 
+                                challenge["Question"], 
+                                challenge["Solution"], 
+                                challenge["Kategory"],
+                                challenge.get("Options", []),
+                                challenge["Points"]
+                            )
                     flash('JSON file successfully imported!', 'success')
                     return redirect(url_for('add_challenge'))
                 else:
@@ -199,16 +223,31 @@ def configure_routes(app):
             else:
                 name = request.form['Name']
                 question = request.form['Question']
-                solution = request.form['Solution']
+                kategory = request.form['QuestionType']
                 points = request.form['Points']
-                save_challenge(name, question, solution, points)
-                flash('Question successfully added!', 'success')  
+                question_type = request.form['QuestionType']
+
+                if question_type == 'multiple_choice':
+                    # Handle multiple choice questions
+                    options = request.form.getlist('Options[]')
+                    solution = request.form['CorrectOption']
+                    if not options or len(options) < 2:
+                        flash('Multiple choice questions need at least 2 options!', 'danger')
+                        return redirect(url_for('add_challenge'))
+                else:
+                    # Handle normal text questions
+                    options = []
+                    solution = request.form['Solution']
+                save_challenge(name, question, solution, kategory, options, points)
+                flash('Question successfully added!', 'success')
                 return redirect(url_for('add_challenge'))
-            
+
+        # Move database query inside the route function
         conn = sqlite3.connect('users.db')
         c = conn.cursor()
-        c.execute('SELECT id, name FROM questions')  
-        challenges = c.fetchall() 
+        c.execute('SELECT id, name, question, solution, kategory, points FROM questions')
+        challenges = c.fetchall()
+        conn.close()
         return render_template('add_challenge.html', challenges=challenges)
     
     @app.route('/add_hint', methods=['POST'])

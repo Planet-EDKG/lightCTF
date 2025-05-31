@@ -17,11 +17,10 @@
     }
 
     .json-container .form-container {
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(0, 0, 0, 0.3)
         padding: 20px;
         border-radius: 10px;
         text-align: center;
-        box-shadow: 0px 4px 10px rgba(255, 98, 178, 0.3);
     }
 
     .json-container h2 {
@@ -47,7 +46,6 @@
     }
 
     .delete-form {
-        display: flex;
         justify-content: center;
         margin-top: 20px;
     }
@@ -60,72 +58,36 @@
         font-size: 16px;
     }
 
-    .delete-form button {
-        background: red;
-        color: white;
-        padding: 10px 20px;
-        border-radius: 8px;
-        font-size: 16px;
-        cursor: pointer;
-        border: none;
-        transition: all 0.3s ease;
-    }
-
     .delete-form button:hover {
         transform: scale(1.05);
         box-shadow: 0px 4px 10px rgba(255, 0, 0, 0.5);
     }
-    .select-container {
-        width: 90%;
-        max-width: 400px;
-        margin: 20px auto;
-        position: relative;
-    }
 
-    .select-container select {
-        width: 100%;
-        padding: 12px;
-        margin-bottom: 30px;
+    .option-item input {
+        display: inline-block;
+        margin: 5px 0;
+        padding: 8px;
         border: 2px solid #6e57e0;
         border-radius: 8px;
         font-size: 16px;
         background-color: #2d354a;
         color: white;
-        appearance: none; /* Entfernt Standard-Pfeil */
         cursor: pointer;
-        outline: none;
-        transition: all 0.3s ease;
+        width: 100%;
     }
 
-    .select-container::after {
-        content: "▼";
-        position: absolute;
-        top: 48%;
-        right: 15px;
-        transform: translateY(-50%);
-        color: white;
-        font-size: 16px;
-        pointer-events: none;
-    }
-
-    .select-container select:hover,
-    .select-container select:focus {
+    .option-item input.selected-option {
         border-color: #ff62b2;
         background-color: #3a435a;
-        box-shadow: 0 0 10px rgba(255, 98, 178, 0.5);
+        box-shadow: 0 0 8px rgba(255, 98, 178, 0.8);
     }
-
-    .select-container select option {
-        background-color: #2d354a;
-        color: white;
-        font-size: 16px;
-        padding: 10px;
+    #smal-select {
+        width: 20%;
+        margin: 15px;
     }
-
 </style>
 <body>
 
-    <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
         <div class="flash-messages">
@@ -154,23 +116,88 @@
 
     <h1>Add a Challenge</h1>
 
-    <!-- Manuelle Eingabe -->
     <div class="form-container">
-        <form method="POST">
+        <form class="select-container" method="POST" onsubmit="return prepareFormSubmission()">
             <input type="text" name="Name" placeholder="Name" required><br>
             <input type="text" name="Question" placeholder="Question" required><br>
-            <input type="text" name="Solution" placeholder="Solution" required><br>
             <input type="number" name="Points" placeholder="Points" required><br>
+
+            <select name="QuestionType" id="questionType" onchange="toggleQuestionTypeFields()" required>
+                <option value="" disabled selected>Select Question Type</option>
+                <option value="normal">Normal</option>
+                <option value="multiple_choice">Multiple Choice</option>
+            </select><br>
+
+            <div id="normalFields" style="display: none;">
+                <input type="text" name="Solution" placeholder="Solution"><br>
+            </div>
+
+            <div id="multipleChoiceFields" style="display: none;">
+                <label>Options (Click one to mark as correct)</label>
+                <div id="optionsContainer"></div>
+                <input type="hidden" name="CorrectOption" id="correctOptionInput">
+                <button type="button" onclick="addOption()">➕ Add Option</button><br><br>
+            </div>
+
             <button type="submit">Add</button>
         </form>
     </div>
 
-    <hr class="hr-line">
+    <script>
+        function toggleQuestionTypeFields() {
+            const type = document.getElementById("questionType").value;
+            document.getElementById("normalFields").style.display = type === "normal" ? "block" : "none";
+            document.getElementById("multipleChoiceFields").style.display = type === "multiple_choice" ? "block" : "none";
+            if (type === "multiple_choice" && document.getElementById("optionsContainer").children.length === 0) {
+                addOption(); addOption(); // Start with 2 options
+            }
+        }
 
+        let optionCounter = 0;
+        function addOption() {
+            const container = document.getElementById("optionsContainer");
+            const option = document.createElement("div");
+            option.className = "option-item";
+            const input = document.createElement("input");
+            input.type = "text";
+            input.name = "Options[]";
+            input.placeholder = "Option";
+            input.required = true;
+            input.classList.add("mc-option");
+            input.onclick = () => setCorrectOption(input);
+            input.oninput = () => {
+                if (input.classList.contains("selected-option")) {
+                    document.getElementById("correctOptionInput").value = input.value;
+                }
+            };
+            option.appendChild(input);
+            container.appendChild(option);
+            optionCounter++;
+        }
+
+        function setCorrectOption(selectedInput) {
+            const inputs = document.querySelectorAll('.mc-option');
+            inputs.forEach(input => input.classList.remove('selected-option'));
+            selectedInput.classList.add('selected-option');
+            document.getElementById("correctOptionInput").value = selectedInput.value;
+        }
+
+        function prepareFormSubmission() {
+            const type = document.getElementById("questionType").value;
+            const correct = document.getElementById("correctOptionInput").value;
+            if (type === "multiple_choice" && !correct) {
+                alert("Please select the correct answer by clicking an option.");
+                return false;
+            }
+            return true;
+        }
+    </script>
+
+    <hr class="hr-line">
 
     <div class="select-container">
         <h2>Add a hint to a Challenge</h2>
-        <form method="POST" action="{{ url_for('add_hint') }}">
+        <form class="form-container" method="POST" action="{{ url_for('add_hint') }}">
             <select name="challenge_id" required>
                 <option value="" disabled selected>Choose a Challenge</option>
                 {% for challenge in challenges %}
@@ -181,7 +208,7 @@
             <input type="number" name="costs" placeholder="Costs" required><br>
             <button type="submit">Add</button>
         </form>
-    </div>    
+    </div>
 
     <hr class="hr-line">
 
@@ -208,11 +235,10 @@
 
     <hr class="hr-line">
 
-
     <div class="select-container">
         <h2>Delete a Challenge</h2>
         <form method="POST" action="{{ url_for('delete_challenge') }}">
-            <select name="challenge_id" required>
+            <select id="smal-select" name="challenge_id" required>
                 <option value="" disabled selected>Choose a Challenge</option>
                 {% for challenge in challenges %}
                     <option value="{{ challenge[0] }}">{{ challenge[1] }}</option>
@@ -220,7 +246,7 @@
             </select>
             <button type="submit">Delete</button>
         </form>
-    </div>    
+    </div>
 
     <div class="footer">
         <p>All rights reserved © Copyright 2025</p>

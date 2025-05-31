@@ -1,4 +1,5 @@
 import sqlite3
+import json  # Add this import at the top of the file
 
 def init_db():
     conn = sqlite3.connect('users.db')
@@ -19,6 +20,8 @@ def init_db():
             name TEXT NOT NULL UNIQUE,
             question TEXT NOT NULL,
             solution TEXT NOT NULL,
+            kategory TEXT NOT NULL,
+            options TEXT,
             points INT NOT NULL
         )
     ''')
@@ -94,11 +97,15 @@ def get_all_challenges():
     conn.close()
     return challenges
 
-def save_challenge(name, question, solution, points):
+def save_challenge(name, question, solution, kategory, options, points):
     conn = sqlite3.connect('users.db')
     c = conn.cursor()
-    c.execute('INSERT INTO questions (name, question, solution, points) VALUES (?, ?, ?, ?)',
-              (name, question, solution, points))
+    
+    # Convert options list to JSON string if it exists
+    options_json = json.dumps(options) if options else None
+    
+    c.execute('INSERT INTO questions (name, question, solution, kategory, options, points) VALUES (?, ?, ?, ?, ?, ?)',
+              (name, question, solution, kategory, options_json, points))
     conn.commit()
     conn.close()
 
@@ -145,3 +152,14 @@ def buy_blackmarket_item(username, item_id):
     conn.close()
     
     return f"Download available: {image}"
+
+def get_challenge_options(challenge_id):
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute('SELECT options FROM questions WHERE id = ?', (challenge_id,))
+    result = c.fetchone()
+    conn.close()
+    
+    if result and result[0]:
+        return json.loads(result[0])
+    return []
