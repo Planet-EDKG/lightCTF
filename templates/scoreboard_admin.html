@@ -23,17 +23,23 @@
         </ul>
     </nav>
     <hr class="hr-line"> 
-
-    {% for user in users %}
+    {% if points is none %}
         <div class="scoreboard-card">
-            <h3>{{ user[0] }}</h3>
-            <p>Points: {{ user[1] }} / {{ points }}</p>
-            <div class="progress-container">
-                <div class="progress-bar">
-                    <div class="progress" style="width: {{ (user[1] / points) * 100 }}%;"></div>
+            <h3>Keine Fragen verfügbar</h3>
+            <p>Bitte fügen Sie zuerst Fragen über "Add Challenge" hinzu.</p>
+        </div>
+    {% else %}
+        {% for user in users %}
+            <div class="scoreboard-card">
+                <h3>{{ user[0] }}</h3>
+                <p>Points: {{ user[1] }} / {{ points }}</p>
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress" style="width: {{ (user[1] / points) * 100 }}%;"></div>
+                    </div>
                 </div>
             </div>
-        </div>
-    {% endfor %}
+        {% endfor %}
+    {% endif %}
 </body>
 </html>

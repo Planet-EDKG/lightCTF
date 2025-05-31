@@ -1,5 +1,6 @@
 import sqlite3
-import json  # Add this import at the top of the file
+import json
+import math  
 
 def init_db():
     conn = sqlite3.connect('users.db')
@@ -101,7 +102,6 @@ def save_challenge(name, question, solution, kategory, options, points):
     conn = sqlite3.connect('users.db')
     c = conn.cursor()
     
-    # Convert options list to JSON string if it exists
     options_json = json.dumps(options) if options else None
     
     c.execute('INSERT INTO questions (name, question, solution, kategory, options, points) VALUES (?, ?, ?, ?, ?, ?)',
@@ -130,6 +130,28 @@ def update_user_points(username, points):
     c.execute('UPDATE users SET score = score + ?, blackmarket_points = blackmarket_points + ? WHERE username = ?', (points, points, username))
     conn.commit()
     conn.close()
+    
+def substract_user_points(username, percents, chalenge_id):
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    
+    c.execute('SELECT points FROM questions WHERE id = ?', (chalenge_id,))
+    questions_points = c.fetchone()[0]  
+    
+    new_points = math.floor(questions_points * percents)
+    
+    c.execute('UPDATE users SET blackmarket_points = blackmarket_points - ? WHERE username = ?', (new_points, username))
+    conn.commit()
+    conn.close()
+    return new_points
+
+def get_user_blackmarket_points(username):
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute('SELECT blackmarket_points FROM users WHERE username = ?', (username,))
+    points = c.fetchone()
+    conn.close()
+    return points[0] if points else 0
 
 def buy_blackmarket_item(username, item_id):
     conn = sqlite3.connect('users.db')

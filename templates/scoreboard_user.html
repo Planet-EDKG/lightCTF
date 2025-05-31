@@ -22,7 +22,12 @@
         </ul>
     </nav>
     <hr class="hr-line"> 
-
+    {% if points is none %}
+        <div class="scoreboard-card">
+            <h3>Keine Fragen verfügbar</h3>
+            <p>Bitte fügen Sie zuerst Fragen über "Add Challenge" hinzu.</p>
+        </div>
+    {% else %}
     {% for user in users %}
         <div class="scoreboard-card">
             <h3>{{ user[0] }}</h3>

@@ -3,7 +3,7 @@ from werkzeug.utils import secure_filename
 import os
 import json
 import sqlite3
-from database import add_user, get_all_challenges, save_challenge, get_entire_points, buy_blackmarket_item, update_user_points
+from database import add_user, get_all_challenges, save_challenge, get_entire_points, buy_blackmarket_item, update_user_points, substract_user_points, get_user_blackmarket_points
 from helpers import allowed_file
 import re
 from difflib import SequenceMatcher
@@ -89,7 +89,7 @@ def configure_routes(app):
         
         for row in challenges_data:
             challenge_id = row[0]
-            options = json.loads(row[5]) if row[5] else []  # Parse JSON options
+            options = json.loads(row[5]) if row[5] else []  
             challenge = {
                 'id': challenge_id,
                 'name': row[1],
@@ -99,7 +99,7 @@ def configure_routes(app):
                 'options': options
             }
             challenges.append(challenge)
-            if row[6]:  # hint exists
+            if row[6]:  
                 hints[str(challenge_id)] = {'hint': row[6], 'costs': row[7]}
         
         answered_questions = []
@@ -126,7 +126,6 @@ def configure_routes(app):
             challenge_id = int(request.form['challenge_id'])
             user_answer = request.form.get(f'answer_{challenge_id}', '').strip()
             
-            # Get challenge details including options
             c.execute('SELECT solution, points, options FROM questions WHERE id = ?', (challenge_id,))
             challenge = c.fetchone()
 
@@ -138,11 +137,9 @@ def configure_routes(app):
                 if challenge_id in correct_answers:
                     flash('You have already answered this question correctly!', 'info')
                 else:
-                    # Check if it's a multiple choice question
                     if options:
                         is_correct = user_answer == correct_solution
                     else:
-                        # For text questions, use the normalize function
                         normalized_user_answer = normalize_text(user_answer)
                         normalized_solution = normalize_text(correct_solution)
                         is_correct = normalized_user_answer == normalized_solution
@@ -156,9 +153,11 @@ def configure_routes(app):
                         if not options:
                             similarity = SequenceMatcher(None, normalized_user_answer, normalized_solution).ratio()
                             if similarity > 0.8:
-                                flash('Very close! Check your spelling and formatting.', 'warning')
+                                sub = substract_user_points(username, 0.8, challenge_id)
+                                flash(f'Very close! Substracted {sub} points.', 'warning')
                             else:
-                                flash('Wrong answer! Try again.', 'error')
+                                sub = substract_user_points(username, 0.5, challenge_id)
+                                flash(f'Wrong answer! Substracted {sub} points.', 'error')
                         else:
                             flash('Wrong answer! Try again.', 'error')
 
@@ -331,7 +330,7 @@ def configure_routes(app):
     @app.route('/scoreboard', methods=['GET'])
     def scoreboard():
         points = get_entire_points()
-
+        
         if 'username' not in session:
             return redirect(url_for('login')) 
 
@@ -389,8 +388,8 @@ def configure_routes(app):
         c.execute('SELECT id, name, costs, image FROM blackmarket')
         items = [{'id': row[0], 'name': row[1], 'costs': row[2], 'image': row[3]} for row in c.fetchall()]
         conn.close()
-        
-        return render_template('blackmarket.html', items=items)
+        points = get_user_blackmarket_points(session['username']) if 'username' in session else 0
+        return render_template('blackmarket.html', items=items, points=points)
 
     @app.route('/buy_blackmarket', methods=['POST'])
     def buy_blackmarket():
@@ -414,10 +413,19 @@ def configure_routes(app):
             filename = result.split(": ")[1]
             
             c.execute('INSERT INTO purchased_items (username, item_id) VALUES (?, ?)', (username, item_id))
+            
+            # Get updated points
+            c.execute('SELECT blackmarket_points FROM users WHERE username = ?', (username,))
+            updated_points = c.fetchone()[0]
+            
             conn.commit()
             conn.close()
             
-            return send_file(os.path.join(app.config['UPLOAD_FOLDER'], filename), as_attachment=True)
+            response = {
+                'file': os.path.join(app.config['UPLOAD_FOLDER'], filename),
+                'points': updated_points
+            }
+            return jsonify(response)
         else:
             flash(result, 'danger')
             conn.close()
